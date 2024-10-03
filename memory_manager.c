@@ -58,7 +58,7 @@ void* mem_alloc(size_t size) {
         return NULL; // Not enough memory
     }
 
-    while ((char*)current + sizeof(Block) + size <= (char*)memoryPool + pool_size) {
+    if((char*)current + sizeof(Block) + size <= (char*)memoryPool + pool_size) {
         Block* block = (Block*)current;
 
         // Check if block is free and large enough
@@ -72,6 +72,7 @@ void* mem_alloc(size_t size) {
             }
             block->isFree = 0; // Mark block as allocated
             current_allocated_size += size; // Update the total allocated size
+            printf("Current allocated size: %c, Requested size: %c\n", (char)current_allocated_size, (char)size);
 
             return (void*)((char*)current + sizeof(Block)); // Return usable memory pointer
         }
@@ -81,7 +82,6 @@ void* mem_alloc(size_t size) {
     }
     return NULL; // No memory block was large enough
 }
-
 
 void mem_free(void* ptr) {
     if (ptr == NULL) return; // Don't free NULL pointers
