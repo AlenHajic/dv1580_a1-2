@@ -72,9 +72,46 @@ void mem_free(void* ptr) {
     }
 }
 
+// Resize memory
+void* mem_resize(void* ptr, size_t newSize) {
+    if (ptr == NULL) {
+        // If the pointer is NULL, allocate new memory
+        return mem_alloc(newSize);
+    }
+
+    // Calculate the index of the block in the pool
+    size_t blockIndex = ((char*)ptr - (char*)memoryPool) / MIN_SIZE;
+    BlockMeta* block = &blockMetaArray[blockIndex];
+
+    // If the current block is large enough, return the same block
+    if (block->size >= newSize) {
+        return ptr;
+    }
+
+    // Check if we can expand into the next block (if it's free)
+    if (blockIndex + 1 < blockCount && blockMetaArray[blockIndex + 1].isFree) {
+        BlockMeta* nextBlock = &blockMetaArray[blockIndex + 1];
+
+        // Check if merging the two blocks would be enough
+        if (block->size + nextBlock->size >= newSize) {
+            block->size += nextBlock->size;
+            nextBlock->isFree = 0;  // Mark the next block as unavailable
+            return ptr;
+        }
+    }
+
+    // Allocate a new block, copy the contents, and free the old block
+    void* new_block = mem_alloc(newSize);
+    if (new_block != NULL) {
+        memcpy(new_block, ptr, block->size);  // Copy the old data to the new block
+        mem_free(ptr);  // Free the old block
+    }
+    return new_block;
+}
+
 // Deinitialize the memory pool
 void mem_deinit() {
-    free(memoryPool);
+    free(memoryPool);  // Free the memory pool
     memoryPool = NULL;
     pool_size = 0;
     blockCount = 0;
