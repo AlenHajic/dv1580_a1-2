@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdlib.h": "c",
-        "assert.h": "c"
+        "assert.h": "c",
+        "memory_manger.h": "c"
     }
 }
