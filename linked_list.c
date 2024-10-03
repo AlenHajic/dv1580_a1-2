@@ -1,4 +1,5 @@
-#include "memory_manager.h"  // Include your custom memory manager header.
+#include "memory_manager.h"
+#include "linked_list.h"  // Include your custom memory manager header.
 
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
