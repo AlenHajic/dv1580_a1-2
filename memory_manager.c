@@ -61,16 +61,39 @@ void* mem_alloc(size_t size) {
 
 // Free memory
 void mem_free(void* ptr) {
-    if (ptr == NULL) return;
+    if (ptr == NULL) return;  // Ignore freeing NULL pointers
 
     // Calculate the index of the block in the pool
     size_t blockIndex = ((char*)ptr - (char*)memoryPool) / MIN_SIZE;
 
     // Mark the block as free
-    if (blockIndex < blockCount) {
-        blockMetaArray[blockIndex].isFree = 1;
+    blockMetaArray[blockIndex].isFree = 1;
+
+    // Attempt to merge with the next block if it's free
+    if (blockIndex + 1 < blockCount && blockMetaArray[blockIndex + 1].isFree) {
+        // Merge the current block with the next block
+        blockMetaArray[blockIndex].size += blockMetaArray[blockIndex + 1].size;
+        
+        // Shift the metadata array to remove the merged block
+        for (size_t i = blockIndex + 1; i < blockCount - 1; ++i) {
+            blockMetaArray[i] = blockMetaArray[i + 1];
+        }
+        blockCount--;  // Decrease block count after merging
+    }
+
+    // Optionally: Attempt to merge with the previous block if it's free
+    if (blockIndex > 0 && blockMetaArray[blockIndex - 1].isFree) {
+        // Merge the previous block with the current block
+        blockMetaArray[blockIndex - 1].size += blockMetaArray[blockIndex].size;
+        
+        // Shift the metadata array to remove the merged block
+        for (size_t i = blockIndex; i < blockCount - 1; ++i) {
+            blockMetaArray[i] = blockMetaArray[i + 1];
+        }
+        blockCount--;  // Decrease block count after merging
     }
 }
+
 
 // Resize memory
 void* mem_resize(void* ptr, size_t newSize) {
