@@ -28,7 +28,6 @@ void mem_init(size_t size) {
     memoryPool->nextBlock = NULL; // No next block yet
 
     poolSize = size;
-    printf("Memory initialized! Size: %zu bytes\n", size);
 }
 
 void* mem_alloc(size_t size) {
@@ -54,7 +53,7 @@ void* mem_alloc(size_t size) {
 
             current->is_free = false; // Mark the current block as allocated
             allocatedSize += current->size + sizeof(memoryBlock); // Update allocated size
-            printf("Memory allocated! Size: %zu bytes\n", current->size);
+
             return (void*)((char*)current + sizeof(memoryBlock)); // Return pointer to the usable memory
         }
         current = current->nextBlock; // Move to the next block
@@ -72,7 +71,6 @@ void mem_free(void* block) {
 
     memoryBlock* thisBlock = (memoryBlock*)((char*)block - sizeof(memoryBlock));
     thisBlock->is_free = true; // Mark the block as free
-    printf("Memory block freed. Size: %zu bytes\n", thisBlock->size);
     allocatedSize -= thisBlock->size + sizeof(memoryBlock); // Update allocated size
 }
 
