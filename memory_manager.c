@@ -1,110 +1,73 @@
-#include "memory_manager.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#define MIN_SIZE 16  // Minimum size for splitting a block
+#define MAX_BLOCKS 100  // Maximum number of blocks
+#define MIN_SIZE 16     // Minimum block size to split
 
-typedef struct Block {
-    size_t size;
-    int isFree;
-} Block;
+typedef struct {
+    size_t size;   // Size of the block
+    int isFree;    // 1 if free, 0 if allocated
+} BlockMeta;
 
 void* memoryPool = NULL;
+BlockMeta blockMetaArray[MAX_BLOCKS];  // Array to store metadata for each block
 size_t pool_size = 0;
-size_t current_allocated_size = 0;
+size_t blockCount = 0;
 
-// Initialize the memory pool
+// Initialize the memory pool and metadata array
 void mem_init(size_t size) {
-    if (size == 0) {
-        printf("Error: Size for initialization was 0\n");
-        exit(1);
-    }
-
     memoryPool = malloc(size);
     pool_size = size;
-    if (memoryPool == NULL) {
-        printf("Error: Memory pool failed to initialize\n");
+    if (!memoryPool) {
+        printf("Failed to initialize memory pool.\n");
         exit(1);
     }
 
-    // Initialize the first block as a free block
-    Block* initialBlock = (Block*)memoryPool;
-    initialBlock->size = size - sizeof(Block);
-    initialBlock->isFree = 1;
-    current_allocated_size = 0;  // Start with no allocations
+    // Initialize the metadata array with a single large free block
+    blockMetaArray[0].size = size;
+    blockMetaArray[0].isFree = 1;
+    blockCount = 1;
 }
 
-// Allocate memory block
+// Allocate memory
 void* mem_alloc(size_t size) {
-    if (size <= 0 || current_allocated_size + size + sizeof(Block) > pool_size) {
-        return NULL;  // Not enough memory
-    }
+    for (size_t i = 0; i < blockCount; ++i) {
+        if (blockMetaArray[i].isFree && blockMetaArray[i].size >= size) {
+            // Allocate memory in this block
+            size_t remainingSize = blockMetaArray[i].size - size;
 
-    Block* block = (Block*)memoryPool;
+            // If there's enough space to split the block, create a new metadata entry
+            if (remainingSize >= MIN_SIZE + sizeof(BlockMeta)) {
+                blockMetaArray[i].size = size;
+                blockMetaArray[i].isFree = 0;
 
-    // Traverse the memory pool using pointer arithmetic
-    while ((char*)block < (char*)memoryPool + pool_size) {
-        // If the block is free and large enough
-        if (block->isFree && block->size >= size) {
-            // Split the block if there’s enough space for the next block
-            if (block->size >= size + sizeof(Block) + MIN_SIZE) {
-                Block* nextBlock = (Block*)((char*)block + sizeof(Block) + size);
-                nextBlock->size = block->size - size - sizeof(Block);
-                nextBlock->isFree = 1;
-                block->size = size;
+                blockMetaArray[blockCount].size = remainingSize;
+                blockMetaArray[blockCount].isFree = 1;
+                blockCount++;
+            } else {
+                // Otherwise, allocate the entire block
+                blockMetaArray[i].isFree = 0;
             }
 
-            block->isFree = 0;  // Mark block as allocated
-            current_allocated_size += block->size + sizeof(Block);  // Update allocated size
-
-            return (void*)((char*)block + sizeof(Block));  // Return usable memory
+            // Return a pointer to the allocated memory
+            return (char*)memoryPool + (i * MIN_SIZE);
         }
-
-        // Move to the next block
-        block = (Block*)((char*)block + sizeof(Block) + block->size);
     }
 
     return NULL;  // No suitable block found
 }
 
-// Free memory block
+// Free memory
 void mem_free(void* ptr) {
-    if (ptr == NULL) return;  // Don't free NULL pointers
+    if (ptr == NULL) return;
 
-    Block* block = (Block*)((char*)ptr - sizeof(Block));
-    if (!block->isFree) {
-        block->isFree = 1;  // Mark block as free
-        current_allocated_size -= block->size + sizeof(Block);  // Update cumulative allocated size
-    }
+    // Calculate the index of the block in the pool
+    size_t blockIndex = ((char*)ptr - (char*)memoryPool) / MIN_SIZE;
 
-    // Optionally, you can add logic here for coalescing adjacent free blocks
-}
-
-// Resize memory block
-void* mem_resize(void* block, size_t size) {
-    if (block == NULL) return mem_alloc(size);  // If block is NULL, allocate new memory
-
-    Block* header = (Block*)((char*)block - sizeof(Block));
-
-    // If the current block is large enough
-    if (header->size >= size) {
-        return block;
-    } else {
-        // Attempt to merge with the next block if it's free and large enough
-        Block* nextBlock = (Block*)((char*)header + sizeof(Block) + header->size);
-        if ((char*)nextBlock < (char*)memoryPool + pool_size && nextBlock->isFree == 1 && header->size + nextBlock->size + sizeof(Block) >= size) {
-            header->size += sizeof(Block) + nextBlock->size;  // Merge blocks
-            return block;
-        } else {
-            // Allocate new memory, copy contents, and free the old block
-            void* new_block = mem_alloc(size);
-            if (new_block != NULL) {
-                memcpy(new_block, block, header->size);
-                mem_free(block);
-            }
-            return new_block;
-        }
+    // Mark the block as free
+    if (blockIndex < blockCount) {
+        blockMetaArray[blockIndex].isFree = 1;
     }
 }
 
@@ -113,5 +76,5 @@ void mem_deinit() {
     free(memoryPool);
     memoryPool = NULL;
     pool_size = 0;
-    current_allocated_size = 0;
+    blockCount = 0;
 }
