@@ -8,8 +8,6 @@
 
 // #define MAX_BLOCKS 100 //Maximum number of blocks; 
 
-#define MIN_SIZE 16
-
 typedef struct Block
 {
     size_t size;
@@ -63,7 +61,7 @@ void* mem_alloc(size_t size) {
         // Check if block is free and large enough
         if (block->isFree && block->size >= size) {
             // Split block if there's enough space for the next block
-            if (block->size >= size + sizeof(Block) + MIN_SIZE) {
+            if (block->size >= size + sizeof(Block) + 16) {
                 Block* nextBlock = (Block*)((char*)current + size + sizeof(Block));
                 nextBlock->size = block->size - size - sizeof(Block);
                 nextBlock->isFree = 1;
