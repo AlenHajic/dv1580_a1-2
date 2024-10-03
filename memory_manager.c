@@ -58,28 +58,29 @@ void* mem_alloc(size_t size) {
         return NULL; // Not enough memory
     }
     
-    while ((char*)current + sizeof(Block) + size <= (char*)memoryPool + pool_size) {
-        Block* block = (Block*)current;
+   while ((char*)current + sizeof(Block) + size <= (char*)memoryPool + pool_size) {
+    Block* block = (Block*)current;
 
-        // Check if block is free and large enough
-        if (block->isFree && block->size >= size) {
-            // Split block if there's enough space for the next block
-            if (block->size >= size + sizeof(Block) + MIN_SIZE) {
-                Block* nextBlock = (Block*)((char*)current + size + sizeof(Block));
-                nextBlock->size = block->size - size - sizeof(Block);
-                nextBlock->isFree = 1;
-                block->size = size;
-            }
-            block->isFree = 0; // Mark block as allocated
-            current_allocated_size += size + sizeof(Block); // Update the total allocated size
-            printf("Current allocated size: %c, Requested size: %c\n", (char)current_allocated_size, (char)size);
-
-            return (void*)((char*)current + sizeof(Block)); // Return usable memory pointer
+    // Check if block is free and large enough
+    if (block->isFree && block->size >= size) {
+        // Split block if there's enough space for the next block
+        if (block->size >= size + sizeof(Block) + MIN_SIZE) {
+            Block* nextBlock = (Block*)((char*)current + size + sizeof(Block));
+            nextBlock->size = block->size - size - sizeof(Block);
+            nextBlock->isFree = 1;
+            block->size = size;
         }
+        block->isFree = 0; // Mark block as allocated
+        current_allocated_size += size; // Update the total allocated size
+        printf("Current allocated size: %zu, Requested size: %zu\n", current_allocated_size, size);
 
-        // Move to the next block
-        current = (char*)current + sizeof(Block) + block->size;
+        return (void*)((char*)current + sizeof(Block)); // Return usable memory pointer
     }
+
+    // Move to the next block
+    current = (char*)current + sizeof(Block) + block->size;
+}
+
     return NULL; // No memory block was large enough
 }
 
