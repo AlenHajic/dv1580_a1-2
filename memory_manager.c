@@ -81,12 +81,14 @@ void* mem_alloc(size_t size) {
     return NULL; // No memory block was large enough
 }
 
-void mem_free(void* block)
-{
-    if(block == NULL) return;
+void mem_free(void* ptr) {
+    if (ptr == NULL) return; // Don't free NULL pointers
 
-    Block* header = (Block*)(char*)block - sizeof(block);
-    header->isFree = 1;
+    Block* block = (Block*)((char*)ptr - sizeof(Block));
+    block->isFree = 1; // Mark the block as free
+    current_allocated_size -= block->size; // Update cumulative allocated size
+
+    // Optionally, implement coalescing adjacent free blocks here
 }
 
 void* mem_resize(void* block, size_t size)
