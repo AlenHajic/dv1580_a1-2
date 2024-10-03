@@ -54,7 +54,7 @@ void* mem_alloc(size_t size) {
     void* current = memoryPool;
 
     // Make sure the request size is valid and doesn't exceed the pool size
-    if (size <= 0 || current_allocated_size + size > pool_size) {
+    if (size <= 0 || current_allocated_size + size + sizeof(Block) > pool_size) {
         return NULL; // Not enough memory
     }
     
