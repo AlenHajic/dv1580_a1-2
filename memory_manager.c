@@ -8,6 +8,8 @@
 
 // #define MAX_BLOCKS 100 //Maximum number of blocks; 
 
+#define MIN_SIZE 16
+
 typedef struct Block
 {
     size_t size;
@@ -47,28 +49,35 @@ void mem_init(size_t size)
 
 }
 
-void* mem_alloc(size_t size)
-{
+void* mem_alloc(size_t size) {
     void* current = memoryPool;
 
-    while((char*)current <= ((char*)memoryPool + pool_size) && (char*)current + (char)size < ((char*)memoryPool + pool_size)) //char eftersom memoryPoolen är en void och när vi adderar pool_size flyttar vi pointern med ett antal bites vileks inte går då den är en void, därför convertar vi den till en char.
-    {
-        Block* block = (Block*)current; //Skapar ett nytt block.
-        if(block->isFree == 1 && block->size >= size) //Kollar om blocket är ledigt + kollar om det blocket vi skapade innan är tillräkligt stort för att hålla vår size.
-        {
-            if(block->size >= size + sizeof(block) + 1) //Kollar om vi kan splitta
-            {
-                Block* nextBlock = (Block*)((char*)current + size + sizeof(Block)); //Skapar blocket efter att vi splittat och lägger starten av det efter "main" blocket + ger det sin egen header/metadata
-                nextBlock->size = block->size - size - sizeof(Block); //Ger sizen till blocket med det överblivna minnet
-                nextBlock->isFree = 1; //Markerar att detta block är free
-                block->size = size; //Lägger "main" till den sizen vi ville allocatea
-            }
-            block->isFree = 0; //markera "main" blocket som ledigt
-            return (void*)((char*)current + sizeof(Block)); //vi uppdaterar pointern av våran current för att accounta för starten av våran user memory (starten av första blocket).
-        }
-        current = (char*)current + sizeof(Block) + block->size; //här flyttar vi current till slutet av det använda blocket.
+    // Make sure the request size is valid and doesn't exceed the pool size
+    if (size <= 0 || pool_size + size > pool_size) {
+        return NULL; // Not enough memory
     }
-    return NULL; //indicates no memory block was large enough.
+
+    while ((char*)current + sizeof(Block) <= (char*)memoryPool + pool_size) {
+        Block* block = (Block*)current;
+
+        // Check if block is free and large enough
+        if (block->isFree && block->size >= size) {
+            // Split block if there's enough space for the next block
+            if (block->size >= size + sizeof(Block) + MIN_SIZE) {
+                Block* nextBlock = (Block*)((char*)current + size + sizeof(Block));
+                nextBlock->size = block->size - size - sizeof(Block);
+                nextBlock->isFree = 1;
+                block->size = size;
+            }
+            block->isFree = 0; // Mark block as allocated
+            pool_size += size; // Update the total allocated size
+            return (void*)((char*)current + sizeof(Block)); // Return usable memory pointer
+        }
+
+        // Move to the next block
+        current = (char*)current + sizeof(Block) + block->size;
+    }
+    return NULL; // No memory block was large enough
 }
 
 void mem_free(void* block)
