@@ -51,7 +51,7 @@ void* mem_alloc(size_t size)
 {
     void* current = memoryPool;
 
-    while((char*)current < ((char*)memoryPool + pool_size)) //char eftersom memoryPoolen är en void och när vi adderar pool_size flyttar vi pointern med ett antal bites vileks inte går då den är en void, därför convertar vi den till en char.
+    while((char*)current <= ((char*)memoryPool + pool_size) && (char*)current + (char)size <= ((char*)memoryPool + pool_size)) //char eftersom memoryPoolen är en void och när vi adderar pool_size flyttar vi pointern med ett antal bites vileks inte går då den är en void, därför convertar vi den till en char.
     {
         Block* block = (Block*)current; //Skapar ett nytt block.
         if(block->isFree == 1 && block->size >= size) //Kollar om blocket är ledigt + kollar om det blocket vi skapade innan är tillräkligt stort för att hålla vår size.
