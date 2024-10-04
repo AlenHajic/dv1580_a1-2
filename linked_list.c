@@ -139,18 +139,19 @@ void list_display(Node** head) {
         printf("%u", current->data);
         current = current->next;
         if (current != NULL) {
-            printf(", ");
+            printf(",%u", current->data);  // Adjust the format here
         }
     }
     printf("]\n");
 }
+
 
 // Display elements in a specific range
 void list_display_range(Node** head, Node* start_node, Node* end_node) {
     if (start_node == NULL) {
         start_node = *head;
     }
-    
+
     Node* current = start_node;
 
     printf("[");
@@ -161,11 +162,12 @@ void list_display_range(Node** head, Node* start_node, Node* end_node) {
         }
         current = current->next;
         if (current != NULL) {
-            printf(", ");
+            printf(",%u", current->data);  // Adjust the format similarly here
         }
     }
     printf("]\n");
 }
+
 
 // Count the number of nodes in the linked list
 int list_count_nodes(Node** head) {
