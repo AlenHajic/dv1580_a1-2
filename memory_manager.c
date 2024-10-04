@@ -56,7 +56,7 @@ void* mem_alloc(size_t size) {
             printf("Allocating memory at block %zu, size: %zu\n", i, size);
 
             // Return a pointer to the allocated memory using size_t for the offset
-            return (char*)memoryPool + (i * MIN_SIZE);
+            return (char*)memoryPool + (i * MIN_SIZE);  // Use i * MIN_SIZE directly
         }
     }
 
