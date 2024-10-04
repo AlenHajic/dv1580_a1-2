@@ -1,5 +1,11 @@
 #include "memory_manager.h"
-#include "linked_list.h"  // Include your custom memory manager header.
+#include <stdio.h>
+#include <stdint.h>
+
+typedef struct Node {
+    uint16_t data;
+    struct Node* next;
+} Node;
 
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
@@ -7,14 +13,14 @@ void list_init(Node** head, size_t size) {
     mem_init(size);  // Initialize the memory manager with the specified size.
 }
 
-// Insertion at the rear of the list
+// Insert a new node at the rear of the list
 void list_insert(Node** head, uint16_t data) {
     Node* new_node = (Node*)mem_alloc(sizeof(Node));  // Allocate memory for the new node.
     if (new_node == NULL) {
         printf("Error: Memory allocation failed.\n");
         return;
     }
-    
+
     new_node->data = data;
     new_node->next = NULL;
 

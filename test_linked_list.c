@@ -9,41 +9,38 @@
 #include "gitdata.h"
 
 // Function to capture stdout output.
-void capture_stdout(char *buffer, size_t size, void (*func)(Node **, Node *, Node *), Node **head, Node *start_node, Node *end_node)
-{
-    // Save the original stdout
-    FILE *original_stdout = stdout;
-
+void capture_stdout(char *buffer, size_t size, void (*func)(Node **, Node *, Node *), Node **head, Node *start_node, Node *end_node) {
     // Open a temporary file to capture stdout
-    FILE *fp = tmpfile(); // tmpfile() creates a temporary file
-    if (fp == NULL)
-    {
+    FILE *tempFile = fopen("temp_output.txt", "w+");
+    if (tempFile == NULL) {
         printf("Failed to open temporary file for capturing stdout.\n");
         return;
     }
 
+    // Save the original stdout
+    FILE *original_stdout = stdout;
+
     // Redirect stdout to the temporary file
-    stdout = fp;
+    stdout = tempFile;
 
     // Call the function whose output we want to capture
     func(head, start_node, end_node);
 
     // Flush the output to the temporary file
-    fflush(fp);
-
-    // Reset the file position to the beginning
-    rewind(fp);
-
-    // Read the content of the temporary file into the buffer
-    fread(buffer, 1, size - 1, fp); // Leave space for null terminator
-    buffer[size - 1] = '\0';        // Ensure the buffer is null-terminated
-
-    // Close the temporary file
-    fclose(fp);
+    fflush(stdout);
 
     // Restore the original stdout
     stdout = original_stdout;
+
+    // Read the content of the temporary file into the buffer
+    rewind(tempFile);  // Reset the file position to the beginning
+    fread(buffer, 1, size - 1, tempFile);  // Leave space for null terminator
+    buffer[size - 1] = '\0';  // Ensure the buffer is null-terminated
+
+    // Close the temporary file
+    fclose(tempFile);
 }
+
 
 // ********* Test basic linked list operations *********
 

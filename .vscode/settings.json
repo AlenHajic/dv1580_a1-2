@@ -2,6 +2,7 @@
     "files.associations": {
         "stdlib.h": "c",
         "assert.h": "c",
-        "memory_manger.h": "c"
+        "memory_manger.h": "c",
+        "gitdata.h": "c"
     }
 }
