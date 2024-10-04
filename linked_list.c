@@ -1,8 +1,5 @@
 #include "memory_manager.h"
 #include "linked_list.h"
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
 
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
