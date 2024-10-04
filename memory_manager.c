@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stddef.h>  // Include for ptrdiff_t
+#include <stddef.h>  // Include for size_t
 
 #define MAX_BLOCKS 100  // Maximum number of blocks
 #define MIN_SIZE 16     // Minimum block size to split
@@ -55,8 +55,8 @@ void* mem_alloc(size_t size) {
 
             printf("Allocating memory at block %zu, size: %zu\n", i, size);
 
-            // Return a pointer to the allocated memory using the actual size of the blocks
-            return (char*)memoryPool + (ptrdiff_t)(blockMetaArray[i].size * i);
+            // Return a pointer to the allocated memory using size_t for the offset
+            return (char*)memoryPool + (i * MIN_SIZE);
         }
     }
 
