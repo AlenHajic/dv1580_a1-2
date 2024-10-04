@@ -9,13 +9,13 @@ typedef struct Node {
 
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
-    *head = NULL;  // Initialize the head to NULL to indicate an empty list.
-    mem_init(size);  // Initialize the memory manager with the specified size.
+    *head = NULL;
+    mem_init(size);
 }
 
 // Insert a new node at the rear of the list
 void list_insert(Node** head, uint16_t data) {
-    Node* new_node = (Node*)mem_alloc(sizeof(Node));  // Allocate memory for the new node.
+    Node* new_node = (Node*)mem_alloc(sizeof(Node));
     if (new_node == NULL) {
         printf("Error: Memory allocation failed.\n");
         return;
@@ -135,26 +135,6 @@ void list_display(Node** head) {
     printf("[");
     while (current != NULL) {
         printf("%u", current->data);
-        current = current->next;
-        if (current != NULL) {
-            printf(", ");
-        }
-    }
-    printf("]\n");
-}
-
-// Display elements in a specific range
-void list_display_range(Node** head, Node* start_node, Node* end_node) {
-    Node* current = (start_node == NULL) ? *head : start_node;
-
-    printf("[");
-    while (current != NULL) {
-        printf("%u", current->data);
-
-        if (current == end_node) {
-            break;
-        }
-
         current = current->next;
         if (current != NULL) {
             printf(", ");
