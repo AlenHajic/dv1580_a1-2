@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stddef.h>  // Include for size_t
 
-#define MAX_BLOCKS 100  // Maximum number of blocks
+#define MAX_BLOCKS 1000  // Maximum number of blocks
 #define MIN_SIZE 16     // Minimum block size to split
 
 typedef struct {
