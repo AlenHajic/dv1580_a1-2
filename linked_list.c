@@ -2,17 +2,21 @@
 #include "linked_list.h"
 
 
-// Linked list initialization function
 void list_init(Node** head, size_t size) {
     *head = NULL;
-    mem_init(size);
+
+    // Allocate a bigger memory pool to handle more inserts (adjust based on your needs)
+    size_t total_pool_size = sizeof(Node) * size;
+
+    printf("Initializing memory pool with size: %zu bytes\n", total_pool_size);  // Debugging statement
+    mem_init(total_pool_size);  // Initialize the memory manager with a larger size.
 }
 
-// Insert a new node at the rear of the list
+
 void list_insert(Node** head, uint16_t data) {
     Node* new_node = (Node*)mem_alloc(sizeof(Node));
     if (new_node == NULL) {
-        printf("Error: Memory allocation failed.\n");
+        printf("Error: Memory allocation failed for new node with data %u.\n", data);
         return;
     }
 
@@ -28,7 +32,10 @@ void list_insert(Node** head, uint16_t data) {
         }
         current->next = new_node;
     }
+
+    printf("Inserted node with data: %u\n", data);  // Debugging statement
 }
+
 
 // Insert a new node after a given node
 void list_insert_after(Node* prev_node, uint16_t data) {
