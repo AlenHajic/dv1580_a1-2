@@ -136,37 +136,35 @@ void list_display(Node** head) {
 
     printf("[");
     while (current != NULL) {
-        printf("%u", current->data);
+        printf("%u", current->data);  // Print the data once
         current = current->next;
         if (current != NULL) {
-            printf(",%u", current->data);  // Adjust the format here
+            printf(", ");  // Print the comma only if there's another node
         }
     }
     printf("]\n");
 }
+
 
 
 // Display elements in a specific range
 void list_display_range(Node** head, Node* start_node, Node* end_node) {
-    if (start_node == NULL) {
-        start_node = *head;
-    }
-
-    Node* current = start_node;
+    Node* current = (start_node == NULL) ? *head : start_node;
 
     printf("[");
     while (current != NULL) {
-        printf("%u", current->data);
+        printf("%u", current->data);  // Print each node's data once
         if (current == end_node) {
-            break;
+            break;  // Stop when we reach the end_node
         }
         current = current->next;
         if (current != NULL) {
-            printf(",%u", current->data);  // Adjust the format similarly here
+            printf(", ");  // Print comma only if there's another node
         }
     }
     printf("]\n");
 }
+
 
 
 // Count the number of nodes in the linked list
