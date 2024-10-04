@@ -1,7 +1,6 @@
 #include "memory_manager.h"
 #include "linked_list.h"
 
-
 void list_init(Node** head, size_t size) {
     *head = NULL;
 
