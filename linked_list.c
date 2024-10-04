@@ -136,11 +136,11 @@ void list_display(Node** head) {
 
     // Start the list display with the opening bracket
     printf("[");
-    
+
     while (current != NULL) {
         // Print the current node's data
         printf("%u", current->data);
-        
+
         // If this is not the last node, print a comma and space
         if (current->next != NULL) {
             printf(", ");
@@ -150,13 +150,9 @@ void list_display(Node** head) {
         current = current->next;
     }
 
-    // Close the list display with the closing bracket and newline
-    printf("]\n");
+    // Close the list display with the closing bracket
+    printf("]");
 }
-
-
-
-
 
 // Display elements in a specific range
 void list_display_range(Node** head, Node* start_node, Node* end_node) {
@@ -168,7 +164,7 @@ void list_display_range(Node** head, Node* start_node, Node* end_node) {
     while (current != NULL) {
         // Print the current node's data
         printf("%u", current->data);
-        
+
         // Stop if we've reached the end node
         if (current == end_node) {
             break;
@@ -183,9 +179,10 @@ void list_display_range(Node** head, Node* start_node, Node* end_node) {
         }
     }
 
-    // Close the list display with the closing bracket and newline
-    printf("]\n");
+    // Close the list display with the closing bracket
+    printf("]");
 }
+
 
 
 
