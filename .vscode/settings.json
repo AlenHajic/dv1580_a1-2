@@ -4,6 +4,7 @@
         "assert.h": "c",
         "memory_manger.h": "c",
         "gitdata.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "linked_list.h": "c"
     }
 }

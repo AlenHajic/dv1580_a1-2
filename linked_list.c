@@ -1,6 +1,7 @@
 #include "memory_manager.h"
 #include "linked_list.h"
 
+
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
     *head = NULL;
@@ -129,6 +130,28 @@ void list_display(Node** head) {
     printf("[");
     while (current != NULL) {
         printf("%u", current->data);
+        current = current->next;
+        if (current != NULL) {
+            printf(", ");
+        }
+    }
+    printf("]\n");
+}
+
+// Display elements in a specific range
+void list_display_range(Node** head, Node* start_node, Node* end_node) {
+    if (start_node == NULL) {
+        start_node = *head;
+    }
+    
+    Node* current = start_node;
+
+    printf("[");
+    while (current != NULL) {
+        printf("%u", current->data);
+        if (current == end_node) {
+            break;
+        }
         current = current->next;
         if (current != NULL) {
             printf(", ");
