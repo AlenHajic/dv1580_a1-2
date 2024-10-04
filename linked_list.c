@@ -3,11 +3,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-typedef struct Node {
-    uint16_t data;
-    struct Node* next;
-} Node;
-
 // Linked list initialization function
 void list_init(Node** head, size_t size) {
     *head = NULL;

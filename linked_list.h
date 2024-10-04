@@ -1,9 +1,11 @@
-#include <stdio.h>
+#ifndef LINKED_LIST_H
+#define LINKED_LIST_H
+
 #include <stdint.h>
 
 typedef struct Node {
-    uint16_t data; // Stores the data as an unsigned 16-bit integer
-    struct Node* next; // A pointer to the next node in the List
+    uint16_t data;
+    struct Node* next;
 } Node;
 
 void list_init(Node** head, size_t size);
@@ -17,3 +19,4 @@ void list_display_range(Node** head, Node* start_node, Node* end_node);
 int list_count_nodes(Node** head);
 void list_cleanup(Node** head);
 
+#endif 
