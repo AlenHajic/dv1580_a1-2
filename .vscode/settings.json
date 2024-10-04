@@ -5,6 +5,7 @@
         "memory_manger.h": "c",
         "gitdata.h": "c",
         "stdio.h": "c",
-        "linked_list.h": "c"
+        "linked_list.h": "c",
+        "memory_manager.h": "c"
     }
 }
