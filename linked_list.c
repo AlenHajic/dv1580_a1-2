@@ -136,14 +136,17 @@ void list_display(Node** head) {
 
     printf("[");
     while (current != NULL) {
-        printf("%u", current->data);  // Print the data once
-        current = current->next;
-        if (current != NULL) {
-            printf(", ");  // Print the comma only if there's another node
+        printf("%u", current->data);  // Print the current node's data
+        
+        // Only print a comma if there's another node
+        if (current->next != NULL) {
+            printf(", ");  // Ensure there is a space after the comma
         }
+        current = current->next;
     }
     printf("]\n");
 }
+
 
 
 
