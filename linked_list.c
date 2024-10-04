@@ -134,18 +134,26 @@ Node* list_search(Node** head, uint16_t data) {
 void list_display(Node** head) {
     Node* current = *head;
 
+    // Start the list display with the opening bracket
     printf("[");
+    
     while (current != NULL) {
-        printf("%u", current->data);  // Print the current node's data
+        // Print the current node's data
+        printf("%u", current->data);
         
-        // Only print a comma if there's another node
+        // If this is not the last node, print a comma and space
         if (current->next != NULL) {
-            printf(", ");  // Ensure there is a space after the comma
+            printf(", ");
         }
+
+        // Move to the next node
         current = current->next;
     }
+
+    // Close the list display with the closing bracket and newline
     printf("]\n");
 }
+
 
 
 
@@ -154,19 +162,31 @@ void list_display(Node** head) {
 void list_display_range(Node** head, Node* start_node, Node* end_node) {
     Node* current = (start_node == NULL) ? *head : start_node;
 
+    // Start the list display with the opening bracket
     printf("[");
+
     while (current != NULL) {
-        printf("%u", current->data);  // Print each node's data once
+        // Print the current node's data
+        printf("%u", current->data);
+        
+        // Stop if we've reached the end node
         if (current == end_node) {
-            break;  // Stop when we reach the end_node
+            break;
         }
+
+        // Move to the next node
         current = current->next;
+
+        // If this is not the last node, print a comma and space
         if (current != NULL) {
-            printf(", ");  // Print comma only if there's another node
+            printf(", ");
         }
     }
+
+    // Close the list display with the closing bracket and newline
     printf("]\n");
 }
+
 
 
 
