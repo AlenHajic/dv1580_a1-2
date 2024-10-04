@@ -13,28 +13,38 @@ void list_init(Node** head, size_t size) {
 }
 
 
+// Insert a new node at the rear of the list
 void list_insert(Node** head, uint16_t data) {
+    // Allocate memory for the new node using the memory manager
     Node* new_node = (Node*)mem_alloc(sizeof(Node));
+
+    // Check if memory allocation was successful
     if (new_node == NULL) {
-        printf("Error: Memory allocation failed for new node with data %u.\n", data);
+        printf("Error: Memory allocation failed.\n");
         return;
     }
 
+    // Initialize the new node with the given data and set next to NULL
     new_node->data = data;
     new_node->next = NULL;
 
+    // If the list is empty, the new node becomes the head
     if (*head == NULL) {
         *head = new_node;
     } else {
+        // Otherwise, find the last node and append the new node at the end
         Node* current = *head;
         while (current->next != NULL) {
             current = current->next;
         }
+        // Insert the new node at the end of the list
         current->next = new_node;
     }
 
-    printf("Inserted node with data: %u\n", data);  // Debugging statement
+    // Print confirmation for debugging (optional)
+    printf("Inserted node with data: %u\n", data);
 }
+
 
 
 // Insert a new node after a given node
