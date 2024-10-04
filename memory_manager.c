@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>  // Include for ptrdiff_t
 
 #define MAX_BLOCKS 100  // Maximum number of blocks
 #define MIN_SIZE 16     // Minimum block size to split
