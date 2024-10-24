@@ -36,7 +36,6 @@ void mem_init(size_t size) {
     printf("Memory pool initialized with size: %zu\n", size);
 }
 
-// Allocate memory
 void* mem_alloc(size_t size) {
     pthread_mutex_lock(&memory_mutex);  // Lock the mutex
 
@@ -45,14 +44,17 @@ void* mem_alloc(size_t size) {
         if (blockMetaArray[i].isFree && blockMetaArray[i].size >= size) {
             size_t remainingSize = blockMetaArray[i].size - size;
 
+            // If the remaining size can fit a new block, split it
             if (remainingSize >= MIN_SIZE) {
                 blockMetaArray[i].size = size;
-                blockMetaArray[i].isFree = 0;
+                blockMetaArray[i].isFree = 0;  // Mark the block as allocated
 
+                // Create a new block from the remaining space
                 blockMetaArray[blockCount].size = remainingSize;
-                blockMetaArray[blockCount].isFree = 1;
+                blockMetaArray[blockCount].isFree = 1;  // Mark the new block as free
                 blockCount++;
             } else {
+                // If the block is exactly the right size or cannot be split, allocate the entire block
                 blockMetaArray[i].isFree = 0;
             }
 
@@ -60,6 +62,7 @@ void* mem_alloc(size_t size) {
             return (char*)memoryPool + offset;
         }
 
+        // Update the offset to point to the next block
         offset += blockMetaArray[i].size;
     }
 
@@ -67,6 +70,7 @@ void* mem_alloc(size_t size) {
     printf("Error: No suitable block found for size %zu\n", size);
     return NULL;
 }
+
 
 // Free allocated memory
 void mem_free(void* ptr) {
