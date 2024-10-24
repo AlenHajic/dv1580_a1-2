@@ -1,155 +1,163 @@
 #include "memory_manager.h"
 
-#define MAX_BLOCKS 1000 // Define a limit for the max number of blocks we can have in our array
-#define MIN_SIZE 16     // Define a limit for the min size of a block to ensure it can hold metadata and avoid being too small during splitting
+#define MAX_BLOCKS 1000 // Maximum number of blocks
+#define MIN_SIZE 16     // Minimum size for a block
 
-// A struct to hold the metadata of each block
+// A struct to hold metadata of each block
 typedef struct {
     size_t size;
     int isFree;
-} BlockMeta; // This ensures we don't need to write "struct" every time we create a BlockMeta struct
+} BlockMeta;
 
-void* memoryPool = NULL;                 // A pointer to the entire memory pool
-BlockMeta blockMetaArray[MAX_BLOCKS];    // An array to hold the metadata of each block in the pool, with a max limit of 1000 blocks
-size_t pool_size = 0;                    // The total size of the memory pool
-size_t blockCount = 0;                   // A counter for the number of blocks in the pool
+// Global variables for memory management
+void* memoryPool = NULL;                 // Pointer to memory pool
+BlockMeta blockMetaArray[MAX_BLOCKS];    // Metadata array
+size_t pool_size = 0;                    // Size of the pool
+size_t blockCount = 0;                   // Number of blocks in the pool
 
-// Function to initialize the memory pool
+// Mutex for thread-safe memory manager operations
+pthread_mutex_t memory_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Initialize the memory pool
 void mem_init(size_t size) {
-    memoryPool = malloc(size); // Allocate memory of the requested size and return a pointer to the start
+    pthread_mutex_init(&memory_mutex, NULL);  // Initialize the mutex
+
+    memoryPool = malloc(size);
     pool_size = size;
-    if (!memoryPool) { // If memoryPool is NULL, we failed to allocate memory, so terminate the program
+    if (!memoryPool) {
         printf("Failed to initialize memory pool.\n");
-        exit(1); // Exit code 1 signifies an error occurred
+        exit(1);
     }
 
-    // Create a block that spans the entire memory pool
     blockMetaArray[0].size = size;
-    blockMetaArray[0].isFree = 1; // Mark the block as free for allocation
+    blockMetaArray[0].isFree = 1;
     blockCount = 1;
 
     printf("Memory pool initialized with size: %zu\n", size);
 }
 
-// Function to allocate a block of the requested size
+// Allocate memory
 void* mem_alloc(size_t size) {
+    pthread_mutex_lock(&memory_mutex);  // Lock the mutex
+
     size_t offset = 0;
     for (size_t i = 0; i < blockCount; ++i) {
         if (blockMetaArray[i].isFree && blockMetaArray[i].size >= size) {
             size_t remainingSize = blockMetaArray[i].size - size;
 
-            // Check if the remaining size is large enough to split into a new block
             if (remainingSize >= MIN_SIZE) {
                 blockMetaArray[i].size = size;
-                blockMetaArray[i].isFree = 0; // Mark the block as allocated (not free)
+                blockMetaArray[i].isFree = 0;
 
-                // Create a new block with the remaining size
-                blockMetaArray[blockCount].size = remainingSize; // Remaining memory forms a new block
-                blockMetaArray[blockCount].isFree = 1;           // Mark the new block as free
+                blockMetaArray[blockCount].size = remainingSize;
+                blockMetaArray[blockCount].isFree = 1;
                 blockCount++;
             } else {
-                // If no splitting is possible, allocate the entire block
                 blockMetaArray[i].isFree = 0;
             }
 
-            // Return a pointer to the allocated block within memoryPool
+            pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
             return (char*)memoryPool + offset;
         }
 
-        // Update offset with the current block's size
         offset += blockMetaArray[i].size;
     }
 
+    pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
     printf("Error: No suitable block found for size %zu\n", size);
     return NULL;
 }
 
-// Function to free an allocated block
+// Free allocated memory
 void mem_free(void* ptr) {
     if (ptr == NULL) return;
 
+    pthread_mutex_lock(&memory_mutex);  // Lock the mutex
+
     size_t offset = 0;
     for (size_t i = 0; i < blockCount; ++i) {
-        // Check if the pointer matches the start of a block in memoryPool
         if ((char*)memoryPool + offset == (char*)ptr) {
-            printf("Freeing memory at block %zu\n", i);
             blockMetaArray[i].isFree = 1;
 
-            // Try to merge with the next block if it is free
             if (i + 1 < blockCount && blockMetaArray[i + 1].isFree) {
-                blockMetaArray[i].size += blockMetaArray[i + 1].size; // Merge the sizes
+                blockMetaArray[i].size += blockMetaArray[i + 1].size;
                 for (size_t j = i + 1; j < blockCount - 1; ++j) {
                     blockMetaArray[j] = blockMetaArray[j + 1];
                 }
                 blockCount--;
             }
 
-            // Try to merge with the previous block if it is free
             if (i > 0 && blockMetaArray[i - 1].isFree) {
-                blockMetaArray[i - 1].size += blockMetaArray[i].size; // Merge the sizes
+                blockMetaArray[i - 1].size += blockMetaArray[i].size;
                 for (size_t j = i; j < blockCount - 1; ++j) {
                     blockMetaArray[j] = blockMetaArray[j + 1];
                 }
                 blockCount--;
             }
+
+            pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
             return;
         }
 
-        // Update the offset with the current block's size
         offset += blockMetaArray[i].size;
     }
 
+    pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
     printf("Error: Pointer not found in memory pool.\n");
 }
 
-// Function to resize an allocated block
+// Resize memory
 void* mem_resize(void* ptr, size_t newSize) {
-    if (ptr == NULL) {
-        return mem_alloc(newSize); // If the pointer is NULL, allocate a new block
-    }
+    if (ptr == NULL) return mem_alloc(newSize);
+
+    pthread_mutex_lock(&memory_mutex);  // Lock the mutex
 
     size_t offset = 0;
     for (size_t i = 0; i < blockCount; ++i) {
-        // Find the block that matches the pointer
         if ((char*)memoryPool + offset == (char*)ptr) {
             BlockMeta* block = &blockMetaArray[i];
 
             if (block->size >= newSize) {
-                return ptr; // If the current block is large enough, no need to resize
+                pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
+                return ptr;
             }
 
-            // Check if we can expand the block into the next block if it is free
             if (i + 1 < blockCount && blockMetaArray[i + 1].isFree) {
                 BlockMeta* nextBlock = &blockMetaArray[i + 1];
                 if (block->size + nextBlock->size >= newSize) {
-                    block->size += nextBlock->size; // Merge the current block with the next block
-                    blockMetaArray[i + 1].isFree = 0; // Mark the next block as not free
+                    block->size += nextBlock->size;
+                    blockMetaArray[i + 1].isFree = 0;
+                    pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
                     return ptr;
                 }
             }
 
-            // If resizing is not possible, allocate a new block
             void* new_block = mem_alloc(newSize);
             if (new_block != NULL) {
-                memcpy(new_block, ptr, block->size); // Copy data to the new block
-                mem_free(ptr);                       // Free the old block
+                memcpy(new_block, ptr, block->size);
+                mem_free(ptr);
             }
+
+            pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
             return new_block;
         }
 
-        // Update the offset with the current block's size
         offset += blockMetaArray[i].size;
     }
 
+    pthread_mutex_unlock(&memory_mutex);  // Unlock the mutex
     printf("Error: Pointer not found in memory pool for resize.\n");
     return NULL;
 }
 
-// Function to deinitialize the memory pool
+// Deinitialize the memory pool
 void mem_deinit() {
-    free(memoryPool);      // Free the allocated memory from the pool
-    memoryPool = NULL;     // Set the pointer to NULL
-    pool_size = 0;         // Reset the pool size
-    blockCount = 0;        // Reset the block count
+    pthread_mutex_destroy(&memory_mutex);  // Destroy the mutex
+
+    free(memoryPool);
+    memoryPool = NULL;
+    pool_size = 0;
+    blockCount = 0;
+
     printf("Memory pool deinitialized.\n");
 }

@@ -2,10 +2,10 @@
 #define LINKED_LIST_H
 
 #include <stdint.h>
-#include <stdio.h> //behöver det här för printf
-#include <stddef.h> //behöver det här för size_t
+#include <stdio.h>
+#include <stddef.h>
 
-//Struct för mina nodes som används i linked_list
+// Struct for nodes in the linked list
 typedef struct Node {
     uint16_t data;
     struct Node* next;
@@ -22,4 +22,4 @@ void list_display_range(Node** head, Node* start_node, Node* end_node);
 int list_count_nodes(Node** head);
 void list_cleanup(Node** head);
 
-#endif 
+#endif // LINKED_LIST_H
