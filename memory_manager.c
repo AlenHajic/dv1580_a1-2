@@ -32,7 +32,6 @@ void mem_init(size_t size) {
 
 //Funktion för att allokera ett block med önskad strolek
 void* mem_alloc(size_t size) {
-    size_t offset = 0;
     for (size_t i = 0; i < blockCount; ++i) { //Loopar igenom arrayen för att se vilka block som finns att allokera till eller inte
         if (blockMetaArray[i].isFree && blockMetaArray[i].size >= size)
         {
@@ -50,9 +49,8 @@ void* mem_alloc(size_t size) {
                 blockMetaArray[i].isFree = 0;
             }
             // printf("Allocating memory at block %zu, size: %zu\n", i, size);
-            return (char*)memoryPool + offset;
+            return (char*)memoryPool + (i * MIN_SIZE);
         }
-        offset += blockMetaArray[i].size;
     }
     printf("Error: No suitable block found for size %zu\n", size);
     return NULL;  
@@ -60,82 +58,83 @@ void* mem_alloc(size_t size) {
 
 //Används för att fria minne i använda block men även merga fria block som ligger intill varandra
 void mem_free(void* ptr) {
-    if (ptr == NULL) return;
+    if (ptr == NULL) return;  //Kollar om det minne vi vill fria är ledigt eller inte
 
-    size_t offset = 0;
-    for (size_t i = 0; i < blockCount; ++i) {
-        // Kolla om pekaren matchar startadressen för något block
-        if ((char*)memoryPool + offset == (char*)ptr) {
-            printf("Freeing memory at block %zu\n", i);
-            blockMetaArray[i].isFree = 1;
+    size_t blockIndex = ((char*)ptr - (char*)memoryPool) / MIN_SIZE; //Ptr:n är starten på det block vi vill fria och om vi tar det
+                                                                     //- starten av hela memory poolen så får vi skillnaden i distans (offseten) och sedan delar vi med hur stort ett block minst kan vara och frå vilken plats i arrayen blocket ligger.
+                                                                     //Nämn att detta inte kommer funka i alla fall eftersom det kan vara olika storlek på blocks och det inte alltid är 16 bytes stora vilket sakapr problem.
+                                                                     //Man får leta efter blockets startadress i en forloop där man kör memorypool + offset och för varje nytt block ökar ofset:en med sizen av vårt curennt block.
+                                                                     //tills man hittar att ptr == blockStart och då kan markera den som free.
+    printf("Freeing memory at block %zu\n", blockIndex);
 
-            // Kolla och merga block till höger om möjligt
-            if (i + 1 < blockCount && blockMetaArray[i + 1].isFree) {
-                blockMetaArray[i].size += blockMetaArray[i + 1].size;
-                for (size_t j = i + 1; j < blockCount - 1; ++j) {
-                    blockMetaArray[j] = blockMetaArray[j + 1];
-                }
-                blockCount--;
-            }
+    blockMetaArray[blockIndex].isFree = 1; //Markerar vårt block som free från den delen där vi är.
 
-            // Kolla och merga block till vänster om möjligt
-            if (i > 0 && blockMetaArray[i - 1].isFree) {
-                blockMetaArray[i - 1].size += blockMetaArray[i].size;
-                for (size_t j = i; j < blockCount - 1; ++j) {
-                    blockMetaArray[j] = blockMetaArray[j + 1];
-                }
-                blockCount--;
-            }
-            return;
+    //Merge:a 
+    if (blockIndex + 1 < blockCount && blockMetaArray[blockIndex + 1].isFree) //Kollar så att blocket efter faktiskt finns och om det är free att allokera till etc.
+    {
+        blockMetaArray[blockIndex].size += blockMetaArray[blockIndex + 1].size; //Mergar sizen av blocket vi friade och det efter
+
+    //Startar från det block vi mergade med och flyttar alla block höger om den ett steg åt vänster
+        for (size_t i = blockIndex + 1; i < blockCount - 1; ++i) 
+        {
+            blockMetaArray[i] = blockMetaArray[i + 1];
         }
-        // Uppdatera offset med storleken på det nuvarande blocket
-        offset += blockMetaArray[i].size;
+        blockCount--; //Minskar met ett block eftersom vi fyllde igen vårt gap
     }
 
-    printf("Error: Pointer not found in memory pool.\n");
-}
+    //Kollar om blocket till vänster är free för att merge:a
+    if (blockIndex > 0 && blockMetaArray[blockIndex - 1].isFree)
+    {
+        blockMetaArray[blockIndex - 1].size += blockMetaArray[blockIndex].size;
 
+        for (size_t i = blockIndex; i < blockCount - 1; ++i)
+        {
+            blockMetaArray[i] = blockMetaArray[i + 1];
+        }
+        blockCount--;
+    }
+}
 
 //Resize:a ett block
 void* mem_resize(void* ptr, size_t newSize) {
-    if (ptr == NULL) {
+    //Om det inte finns ett block att resize:a så skapr vi ett nytt block med önskad size.
+    if (ptr == NULL) 
+    {
         return mem_alloc(newSize);
     }
 
-    size_t offset = 0;
-    for (size_t i = 0; i < blockCount; ++i) {
-        // Hitta blocket som matchar pekaren
-        if ((char*)memoryPool + offset == (char*)ptr) {
-            BlockMeta* block = &blockMetaArray[i];
+    size_t blockIndex = ((char*)ptr - (char*)memoryPool) / MIN_SIZE; //Ändra här till en forloop som går igenom arrayen och kollr om blockStart == ptr (blockStart = memoryPool + offset och ofset börjar på 0 men ökar fter varje
+                                                                     //iteradtion med sizen av vårt nuvarande block).
+    BlockMeta* block = &blockMetaArray[blockIndex];
 
-            if (block->size >= newSize) {
-                return ptr;
-            }
-
-            // Kolla om blocket till höger kan användas för att expandera
-            if (i + 1 < blockCount && blockMetaArray[i + 1].isFree) {
-                BlockMeta* nextBlock = &blockMetaArray[i + 1];
-                if (block->size + nextBlock->size >= newSize) {
-                    block->size += nextBlock->size;
-                    blockMetaArray[i + 1].isFree = 0;
-                    return ptr;
-                }
-            }
-
-            void* new_block = mem_alloc(newSize);
-            if (new_block != NULL) {
-                memcpy(new_block, ptr, block->size);
-                mem_free(ptr);
-            }
-            return new_block;
-        }
-        offset += blockMetaArray[i].size;
+    //Om dem är lika stora eller vårt size redan är större så behöver vi inte resizea, behöver inte kolla om new_size är mindre etersom vi ine kan a bort size
+    if (block->size >= newSize)  //Notera att vi inte hanterar det fall då vill shrinka blocket. Det man  får göra är att se hur mcyket minne som blir över och kolla om det går att splitta för att sedan skapa ett nytt block med remainignsize.
+    {
+        return ptr;
     }
 
-    printf("Error: Pointer not found in memory pool for resize.\n");
-    return NULL;
-}
+    //Använder den här för att expandera vårt block åt höger om möjligt ifall vårt nuvarande block är för litet för new_size, notera att vi hade kunnat kolla samam sak åt vänster
+    if (blockIndex + 1 < blockCount && blockMetaArray[blockIndex + 1].isFree) //Kolla om vi är på sista blcoket eller om det ligger ett ledigt block åt höger
+    {
+        BlockMeta* nextBlock = &blockMetaArray[blockIndex + 1]; //Skapar en pointer till blcoket åt höger för att kunan kolla dess metadata så att vi inte måstte skriva blockMetaArray[blockIndex + 1]
 
+        if (block->size + nextBlock->size >= newSize) 
+        {
+            block->size += nextBlock->size; //Komibenrar/mergar vårt block + nästa blocks size
+            nextBlock->isFree = 0; //Markera nästa block som free
+            return ptr; //Returnerar en ptr till vårt "nya" blcok
+        }
+    }
+
+    //Om det inte går att resize:a på något sätt så skapr vi ett nytt block.
+    void* new_block = mem_alloc(newSize); //Skapar det nya blocket.
+    if (new_block != NULL) //Kollar gick det att allokera?
+    {
+        memcpy(new_block, ptr, block->size); //Kopierar in datan från ptr(vårt block vi försökte resize:a) till vårt nya block och skriver hur många bytes som ska kopieras.
+        mem_free(ptr); //Tar bort det gamla blocket
+    }
+    return new_block; //returnerar det gamla blocket.
+}
 
 //Friar allt minne från poolen
 void mem_deinit() 
